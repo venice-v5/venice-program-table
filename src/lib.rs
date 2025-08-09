@@ -12,7 +12,7 @@ use bytemuck::{AnyBitPattern, NoUninit, PodCastError, Zeroable};
 pub use crate::builder::{ProgramBuilder, VptBuilder};
 
 pub const VPT_MAGIC: u32 = 0x675c3ed9;
-pub const VERSION: Version = Version { major: 0, minor: 0 };
+pub const VERSION: Version = Version { major: 0, minor: 1 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(C)]
