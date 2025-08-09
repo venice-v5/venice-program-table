@@ -53,7 +53,7 @@ pub struct Vpt<'a> {
 
 // Program Layout:
 //
-// #[repr(C)]
+// #[repr(C, align(8)))]
 // struct Program {
 //     name_len: u32,
 //     payload_len: u32,
@@ -62,7 +62,7 @@ pub struct Vpt<'a> {
 // }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, NoUninit, AnyBitPattern)]
-#[repr(C)]
+#[repr(C, align(8))]
 pub struct ProgramHeader {
     pub name_len: u32,
     pub payload_len: u32,
