@@ -1,6 +1,15 @@
 #![no_std]
 
+#[cfg(feature = "builder")]
+extern crate alloc;
+
+#[cfg(feature = "builder")]
+mod builder;
+
 use bytemuck::{AnyBitPattern, NoUninit, PodCastError};
+
+#[cfg(feature = "builder")]
+pub use crate::builder::{ProgramBuilder, VptBuilder};
 
 pub const VPT_MAGIC: u32 = 0x675c3ed9;
 pub const VERSION: Version = Version { major: 0, minor: 0 };

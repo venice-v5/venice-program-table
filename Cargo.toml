@@ -11,3 +11,7 @@ authors = ["Faisal Malallah <faisal@fibn.cc>"]
 
 [dependencies]
 bytemuck = { version = "1.23.2", features = ["derive"] }
+
+[features]
+default = ["builder"]
+builder = []
