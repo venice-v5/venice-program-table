@@ -132,6 +132,9 @@ impl<'a> Vpt<'a> {
         Ok(Self { header })
     }
 
+    /// # Safety
+    ///
+    /// `ptr` must point to a valid VPT
     pub unsafe fn from_ptr(ptr: *const u8, vendor_id: u32) -> Result<Self, VptDefect> {
         let header_ptr = ptr as *const VptHeader;
         if !header_ptr.is_aligned() {
@@ -193,7 +196,7 @@ impl<'a> Iterator for ProgramIter<'a> {
 
         let program_len =
             size_of::<ProgramHeader>() + header.payload_len as usize + header.name_len as usize;
-        self.bytes = &self.bytes[program_len + 7 & !7..];
+        self.bytes = &self.bytes[(program_len + 7) & !7..];
 
         Some(Program { name, payload })
     }

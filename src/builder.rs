@@ -20,7 +20,7 @@ impl ProgramBuilder {
     }
 
     pub const fn size(&self) -> usize {
-        self.base_size() + 7 & !7
+        (self.base_size() + 7) & !7
     }
 
     pub const fn padding_bytes(&self) -> usize {
@@ -46,7 +46,7 @@ impl VptBuilder {
                 .programs
                 .iter()
                 .map(ProgramBuilder::size)
-                .fold(0, |acc, x| acc + x);
+                .sum::<usize>();
 
         let mut bytes = Vec::with_capacity(total_size);
 
@@ -67,9 +67,7 @@ impl VptBuilder {
             bytes.extend_from_slice(&program.payload);
             bytes.extend_from_slice(&program.name);
 
-            for _ in 0..program.padding_bytes() {
-                bytes.push(0);
-            }
+            bytes.extend(core::iter::repeat_n(0, program.padding_bytes()));
         }
 
         bytes
