@@ -158,16 +158,17 @@ impl<'a> Iterator for ProgramIter<'a> {
         let header_bytes = self.bytes.get(..size_of::<ProgramHeader>())?;
         let header: &ProgramHeader = bytemuck::from_bytes(header_bytes);
 
-        let payload = self
-            .bytes
-            .get(size_of::<ProgramHeader>()..header.payload_len as usize)?;
-        let name = self.bytes.get(
-            size_of::<ProgramHeader>() + header.payload_len as usize..header.name_len as usize,
+        // program excluding header
+        let program = &self.bytes[size_of::<ProgramHeader>()..];
+
+        let payload = program.get(..header.payload_len as usize)?;
+        let name = program.get(
+            header.payload_len as usize..header.payload_len as usize + header.name_len as usize,
         )?;
 
         let program_len =
             size_of::<ProgramHeader>() + header.payload_len as usize + header.name_len as usize;
-        self.bytes = &self.bytes[program_len..];
+        self.bytes = &self.bytes[program_len + 7 & !7..];
 
         Some(Program { name, payload })
     }
