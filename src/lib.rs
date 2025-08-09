@@ -52,8 +52,8 @@ unsafe impl NoUninit for VptHeader {}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Vpt<'a> {
-    // Invariant: `header` points to a valid VPT
-    header: &'a VptHeader,
+    // Invariant: `bytes` contains a well-aligned VPT with a valid header.
+    bytes: &'a [u8],
 }
 
 // Program Layout:
@@ -129,7 +129,9 @@ impl<'a> Vpt<'a> {
 
         // All invariants have been checked.
 
-        Ok(Self { header })
+        Ok(Self {
+            bytes: &bytes[..header.size as usize],
+        })
     }
 
     /// # Safety
@@ -155,26 +157,14 @@ impl<'a> Vpt<'a> {
             return Err(VptDefect::VendorMismatch(header.vendor_id));
         }
 
-        Ok(Self { header })
-    }
-
-    pub const fn bytes(&self) -> &[u8] {
-        // SAFETY: VPT invariant is upheld
-        unsafe {
-            core::slice::from_raw_parts(
-                self.header as *const _ as *const _,
-                self.header.size as usize,
-            )
-        }
-    }
-
-    pub fn program_payload(&self) -> &[u8] {
-        &self.bytes()[size_of::<VptHeader>()..]
+        Ok(Self {
+            bytes: unsafe { core::slice::from_raw_parts(ptr, header.size as usize) },
+        })
     }
 
     pub fn program_iter(&self) -> ProgramIter {
         ProgramIter {
-            bytes: self.program_payload(),
+            bytes: &self.bytes[size_of::<VptHeader>()..],
         }
     }
 }
