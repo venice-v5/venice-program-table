@@ -1,8 +1,6 @@
 #![no_std]
 
-use bytemuck::AnyBitPattern;
-use bytemuck::NoUninit;
-use bytemuck::PodCastError;
+use bytemuck::{AnyBitPattern, NoUninit, PodCastError};
 
 pub const VPT_MAGIC: u32 = 0x675c3ed9;
 pub const VERSION: Version = Version { major: 0, minor: 0 };
