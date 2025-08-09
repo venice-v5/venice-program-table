@@ -42,6 +42,32 @@ pub struct Vpt<'a> {
     header: &'a VptHeader,
 }
 
+// Program Layout:
+//
+// #[repr(C)]
+// struct Program {
+//     name_len: u32,
+//     payload_len: u32,
+//     payload: [u8, payload_len],
+//     name: [u8, name_len],
+// }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, NoUninit, AnyBitPattern)]
+#[repr(C)]
+pub struct ProgramHeader {
+    pub name_len: u32,
+    pub payload_len: u32,
+}
+
+pub struct Program<'a> {
+    name: &'a [u8],
+    payload: &'a [u8],
+}
+
+pub struct ProgramIter<'a> {
+    bytes: &'a [u8],
+}
+
 impl Version {
     pub const fn compatible_with(&self, other: &Version) -> bool {
         self.major != other.major || other.minor < self.minor
@@ -112,5 +138,47 @@ impl<'a> Vpt<'a> {
                 self.header.size as usize,
             )
         }
+    }
+
+    pub fn program_payload(&self) -> &[u8] {
+        &self.bytes()[size_of::<VptHeader>()..]
+    }
+
+    pub fn program_iter(&self) -> ProgramIter {
+        ProgramIter {
+            bytes: self.program_payload(),
+        }
+    }
+}
+
+impl<'a> Iterator for ProgramIter<'a> {
+    type Item = Program<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let header_bytes = self.bytes.get(..size_of::<ProgramHeader>())?;
+        let header: &ProgramHeader = bytemuck::from_bytes(header_bytes);
+
+        let payload = self
+            .bytes
+            .get(size_of::<ProgramHeader>()..header.payload_len as usize)?;
+        let name = self.bytes.get(
+            size_of::<ProgramHeader>() + header.payload_len as usize..header.name_len as usize,
+        )?;
+
+        let program_len =
+            size_of::<ProgramHeader>() + header.payload_len as usize + header.name_len as usize;
+        self.bytes = &self.bytes[program_len..];
+
+        Some(Program { name, payload })
+    }
+}
+
+impl Program<'_> {
+    pub const fn name(&self) -> &[u8] {
+        self.name
+    }
+
+    pub const fn payload(&self) -> &[u8] {
+        self.payload
     }
 }
