@@ -6,7 +6,7 @@ extern crate alloc;
 #[cfg(feature = "builder")]
 mod builder;
 
-use bytemuck::{AnyBitPattern, NoUninit, PodCastError};
+use bytemuck::{AnyBitPattern, NoUninit, PodCastError, Zeroable};
 
 #[cfg(feature = "builder")]
 pub use crate::builder::{ProgramBuilder, VptBuilder};
@@ -14,7 +14,7 @@ pub use crate::builder::{ProgramBuilder, VptBuilder};
 pub const VPT_MAGIC: u32 = 0x675c3ed9;
 pub const VERSION: Version = Version { major: 0, minor: 0 };
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, NoUninit, AnyBitPattern)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(C)]
 pub struct Version {
     major: u32,
@@ -30,7 +30,7 @@ pub enum VptDefect {
     VendorMismatch(u32),
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, NoUninit, AnyBitPattern)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(C, align(8))]
 pub struct VptHeader {
     /// Magic number. Must be equal to [`VPT_MAGIC`], or 0x675c3ed9.
@@ -45,6 +45,10 @@ pub struct VptHeader {
     /// Number of programs contained within the VPT.
     pub program_count: u32,
 }
+
+unsafe impl Zeroable for VptHeader {}
+unsafe impl AnyBitPattern for VptHeader {}
+unsafe impl NoUninit for VptHeader {}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Vpt<'a> {
@@ -62,12 +66,16 @@ pub struct Vpt<'a> {
 //     name: [u8, name_len],
 // }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, NoUninit, AnyBitPattern)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(C, align(8))]
 pub struct ProgramHeader {
     pub name_len: u32,
     pub payload_len: u32,
 }
+
+unsafe impl Zeroable for ProgramHeader {}
+unsafe impl AnyBitPattern for ProgramHeader {}
+unsafe impl NoUninit for ProgramHeader {}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Program<'a> {
