@@ -46,6 +46,7 @@ pub struct VptHeader {
     pub program_count: u32,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Vpt<'a> {
     // Invariant: `header` points to a valid VPT
     header: &'a VptHeader,
@@ -68,11 +69,13 @@ pub struct ProgramHeader {
     pub payload_len: u32,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Program<'a> {
     name: &'a [u8],
     payload: &'a [u8],
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ProgramIter<'a> {
     bytes: &'a [u8],
 }
