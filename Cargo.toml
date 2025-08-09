@@ -1,0 +1,12 @@
+[package]
+name = "venice-program-table"
+version = "0.1.0"
+edition = "2024"
+
+description = "File format designed for delivering code to a VEX V5 program"
+keywords = ["robotics", "vex", "v5"]
+repository = "https://github.com/venice-v5/venice-program-table"
+license = "MPL-2.0"
+authors = ["Faisal Malallah <faisal@fibn.cc>"]
+
+[dependencies]
