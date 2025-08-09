@@ -83,6 +83,7 @@ pub struct Program<'a> {
     payload: &'a [u8],
 }
 
+#[must_use]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ProgramIter<'a> {
     bytes: &'a [u8],
