@@ -13,5 +13,4 @@ authors = ["Faisal Malallah <faisal@fibn.cc>"]
 bytemuck = "1.23.2"
 
 [features]
-default = ["builder"]
 builder = []
