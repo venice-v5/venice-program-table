@@ -78,8 +78,6 @@ The crate is `no_std` by default and exposes a zero-copy reader. A feature-gated
       - zero padding to `align8`
 - Padding
   - Padding is zero-filled; readers must rely on computed offsets rather than scanning for zeros
-- MSRV note
-  - Prefer using `Vec::resize(bytes.len() + padding, 0)` for padding to avoid depending on newer iterator helpers across toolchains
 
 ## Error model
 
