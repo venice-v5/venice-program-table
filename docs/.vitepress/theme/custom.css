@@ -1,0 +1,23 @@
+:root {
+  --vp-c-text-1: black;
+  --vp-c-text-2: black;
+  --vp-c-text-3: black;
+}
+
+.dark {
+  --vp-c-text-1: white;
+  --vp-c-text-2: white;
+  --vp-c-text-3: white;
+}
+
+:root {
+    --vp-c-indigo-1: rgba(255, 69.495, 58.941);
+    --vp-c-indigo-2: rgba(255, 69.495, 58.941);
+    --vp-c-indigo-3: rgba(255, 69.495, 58.941);
+}
+
+.dark {
+  --vp-c-indigo-1: rgba(255, 69.495, 58.941);
+  --vp-c-indigo-2: rgba(255, 69.495, 58.941);
+  --vp-c-indigo-3: rgba(255, 69.495, 58.941);
+}
