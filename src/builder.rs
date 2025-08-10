@@ -1,6 +1,6 @@
 use alloc::vec::Vec;
 
-use crate::{ProgramHeader, VERSION, VPT_MAGIC, VptHeader};
+use crate::{ProgramHeader, VERSION, VPT_MAGIC, VptHeader, align8};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProgramBuilder {
@@ -20,7 +20,7 @@ impl ProgramBuilder {
     }
 
     pub const fn size(&self) -> usize {
-        (self.base_size() + 7) & !7
+        align8(self.base_size())
     }
 
     pub const fn padding_bytes(&self) -> usize {

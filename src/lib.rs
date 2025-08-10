@@ -14,6 +14,10 @@ pub use crate::builder::{ProgramBuilder, VptBuilder};
 pub const VPT_MAGIC: u32 = 0x675c3ed9;
 pub const VERSION: Version = Version { major: 0, minor: 1 };
 
+const fn align8(n: usize) -> usize {
+    (n + 7) & !7
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(C)]
 pub struct Version {
@@ -201,7 +205,7 @@ impl<'a> Iterator for ProgramIter<'a> {
         let program_len =
             size_of::<ProgramHeader>() + header.payload_len as usize + header.name_len as usize;
 
-        self.bytes = &self.bytes[(program_len + 7) & !7..];
+        self.bytes = &self.bytes[align8(program_len)..];
         self.current_program += 1;
 
         Some(Program { name, payload })
