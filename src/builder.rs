@@ -67,7 +67,8 @@ impl VptBuilder {
             bytes.extend_from_slice(&program.payload);
             bytes.extend_from_slice(&program.name);
 
-            bytes.extend(core::iter::repeat_n(0, program.padding_bytes()));
+            // add padding
+            bytes.resize(bytes.len() + program.padding_bytes(), 0);
         }
 
         bytes
