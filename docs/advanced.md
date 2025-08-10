@@ -1,6 +1,6 @@
 # Advanced: VPT Format Details
 
-This page describes the on-wire format of the Venice Program Table (VPT): a compact, aligned, versioned container for mapping module names to MicroPython bytecode payloads for the Venice runtime on VEX V5.
+This page describes the on-wire format of the Venice Program Table (VPT).
 
 ## Binary Layout (at a glance)
 
@@ -91,9 +91,8 @@ Padding computation:
 - The header stores a `Version { major, minor }`.
 - Consumers verify compatibility with the version they are built against:
   - Major must match.
-  - If major is 0, compatibility follows a relaxed policy: a consumer built against minor `m` accepts blobs with minor `M >= m`.
-  - If major is nonzero, minor must match exactly.
-- This allows iterative evolution while major is 0, and strict matching for stable majors.
+  - If major is nonzero, compatibility follows a relaxed policy: a consumer built against minor `m` accepts blobs with minor `M >= m`.
+  - If major is 0, minor must match exactly.
 
 ## Vendor ID
 
@@ -102,9 +101,7 @@ Padding computation:
 
 ## Endianness
 
-- All integers are stored in the producer’s native endianness as emitted by its C-like layout.
-- For robust cross-device usage, ensure the producer and consumer agree on endianness (common case: little-endian on both sides).
-- If you must consume a blob from a platform with different endianness, rebuild the VPT on the target endianness or introduce a well-defined endianness conversion step in your pipeline.
+- All integers are required to be stored by the producer in little-endian, the endianness used by the ARM Cortex-A9.
 
 ## Validation Sequence (consumer-side)
 
@@ -122,6 +119,7 @@ Typical validation when loading:
      - Bounds-check `payload_len` and `name_len`.
      - Slice payload and name.
      - Advance by `align8(8 + payload_len + name_len)`.
+     - Continue until `buffer` is exhuasted or `program_count` is exceeded.
 
 If any check fails, reject the blob.
 
@@ -136,12 +134,13 @@ If any check fails, reject the blob.
 ## Practical Notes
 
 - Names are treated as opaque bytes; they are not NUL-terminated. Use the stored length when comparing/looking up.
-- The order of entry contents is `payload` first, then `name`. Do not assume any terminators.
+- The order of entry contents is `payload` first, then `name`.
+  - Payloads are assumed to have the possibility of containing data that must be aligned.
+  - Names are usually series of bytes, so they adhere to no alignment rules.
 - The format is designed for zero-copy iteration; consumers should avoid copying unless necessary.
 - When building:
   - Precompute lengths and maintain 8-byte alignment via padding.
   - Use a consistent `vendor_id` to prevent accidental cross-loading.
-  - Consider embedding the VPT blob directly into firmware images to avoid IO on constrained targets.
 
 ## Example (schematic)
 
@@ -150,7 +149,7 @@ Two entries, with short payloads and names:
 ~~~
 VPT
 ┌──────────────────────────────────────────┐
-│ VptHeader (magic, version, vendor, ...) │ 24 B
+│ VptHeader (magic, version, vendor, ...)  │ 24 B
 ├──────────────────────────────────────────┤
 │ Program 0                                │
 │  - name_len=5                            │

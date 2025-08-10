@@ -43,8 +43,10 @@ use venice_program_table::{Vpt, VptDefect};
 
 const VENDOR_ID: u32 = 0x1234_5678;
 
-fn load(blob: &[u8]) -> Result<(), VptDefect> {
-    let vpt = Vpt::new(blob, VENDOR_ID)?;
+static BLOB: &[u8] = include_bytes!("blob.vpt");
+
+fn load() -> Result<(), VptDefect> {
+    let vpt = Vpt::new(BLOB, VENDOR_ID)?;
     for program in vpt.program_iter() {
         let name_bytes = program.name();
         let payload = program.payload();
@@ -53,7 +55,7 @@ fn load(blob: &[u8]) -> Result<(), VptDefect> {
         if let Ok(name) = core::str::from_utf8(name_bytes) {
             // e.g., dispatch on module name
             if name == "main" {
-                // hand off payload to your MicroPython loader
+                // hand off payload to your language runtime
             }
         }
     }
@@ -70,16 +72,20 @@ fn find_program<'a>(vpt: &'a Vpt<'a>, name: &[u8]) -> Option<venice_program_tabl
 }
 ```
 
-### Constructing from a pointer (advanced)
+### Constructing from a pointer/linked file (advanced)
 
-If your blob resides in device memory and you only have a pointer, you can validate directly:
+If your blob is linked to your program at a known address, you can validate it directly:
 
 ```rust
 use venice_program_table::{Vpt, VptDefect};
 
-unsafe fn load_from_ptr(ptr: *const u8, vendor_id: u32) -> Result<Vpt<'static>, VptDefect> {
-    // Safety: caller must ensure `ptr` points to a valid VPT.
-    Vpt::from_ptr(ptr, vendor_id)
+unsafe extern "C" {
+    static __linked_file_start: u8;
+}
+
+unsafe fn load_from_linked(vendor_id: u32) -> Result<Vpt<'static>, VptDefect> {
+    // Safety: `__linked_file_start` must point to a valid VPT.
+    Vpt::from_ptr(&raw const __linked_file_start, vendor_id)
 }
 ```
 
@@ -100,58 +106,54 @@ use venice_program_table::{VptBuilder, ProgramBuilder};
 const VENDOR_ID: u32 = 0x1234_5678;
 
 fn build_blob() -> Vec<u8> {
-    // Prepare your compiled MicroPython bytecode per module.
-    let main_bc: Vec<u8> = compile_to_micropython_bytecode("print('hello')");
+    // Prepare entrypoint name and source
+    let entrypoint_name = b"main.py".to_vec();
+    let entrypoint_src: Vec<u8> = b"print('hello')".to_vec();
 
     let mut builder = VptBuilder::new(VENDOR_ID);
+    // Add entrypoint
     builder.add_program(ProgramBuilder {
-        name: b"main".to_vec(),
-        payload: main_bc,
+        name: entrypoint_name
+        payload: entrypoint_src,
     });
 
     // Serialize to a single aligned binary blob.
     builder.build()
 }
-
-// Stub to illustrate; replace with your actual compilation pipeline.
-fn compile_to_micropython_bytecode(_src: &str) -> Vec<u8> { vec![0x00, 0x01, 0x02] }
 ```
 
 Notes:
 - The builder handles headers, ordering, and 8-byte alignment padding for you.
-- Module names are arbitrary byte strings (not NUL-terminated). Use consistent encoding (e.g., UTF-8) if you plan to display or compare as strings.
+- Program names are arbitrary byte strings (not NUL-terminated).
 - Use the same `vendor_id` at build and load time to prevent accidental cross-loading.
 
 ## Validation Guarantees
 
 On `Vpt::new` / `Vpt::from_ptr`, the following checks are performed:
 - Magic number matches `VPT_MAGIC`.
-- Version is compatible with the crate’s `VERSION`:
+- Version is compatible with the SDK's `VERSION`:
   - Same major.
-  - If major == 0, the blob’s minor can be newer or equal to the consumer’s minor.
-  - If major > 0, minor must match exactly.
+  - If major == 0, minor must match exactly.
+  - If major > 0, the blob’s minor can be newer or equal to the consumer’s minor.
 - `vendor_id` matches the expected value you pass in.
 - Buffer length is sufficient for the declared total size.
-- Entries are iterated using explicit length fields and 8-byte alignment.
 
 If any check fails, you receive a `VptDefect` indicating the reason.
 
 ## Tips and Patterns
 
 - Fast lookup by name:
-  - Maintain a small index (e.g., a perfect hash or sorted names array) on the host and ship it separately if you need O(log n) lookup at runtime, or just linearly scan with `Iterator::find` if your module count is small.
+  - Upon parsing the blob, iterate through each program and build a hash map that matches program names to their payloads for a fast O(1) average lookup.
 - Zero-copy payloads:
   - The `payload()` slice references the original blob; avoid copying unless you must mutate.
 - Endianness:
-  - Ensure producer and consumer agree on endianness across platforms; the common case is little-endian on both host and target.
+  - Ensure the producer uses little-endian integers.
 - Safety:
-  - Use `Vpt::from_ptr` only when you can guarantee alignment and that the pointer refers to a valid VPT region.
+  - Use `Vpt::from_ptr` only when the memory region is designated for VPT blobs and is well-aligned.
 
 ## FAQ
 
-- How do I handle non-UTF8 names?
-  - Treat names as raw bytes (`&[u8]`). Convert to `&str` only when you know they’re UTF-8.
-- Can I store metadata per module?
-  - The base format stores only the name and payload. If you need metadata, embed it within the payload or define a convention for a special module that carries a metadata table.
+- Can I store metadata per program?
+  - The base format stores only the name and payload. If you need metadata, embed it within the payload or define a convention for a special program that carries a metadata table.
 - How do I support multiple runtimes?
   - Use distinct `vendor_id` values for each consumer and build separate blobs (or a superset blob parsed differently by each consumer).
