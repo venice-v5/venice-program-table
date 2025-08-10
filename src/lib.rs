@@ -208,12 +208,12 @@ impl<'a> Iterator for ProgramIter<'a> {
     }
 }
 
-impl Program<'_> {
-    pub const fn name(&self) -> &[u8] {
+impl<'a> Program<'a> {
+    pub const fn name(&self) -> &'a [u8] {
         self.name
     }
 
-    pub const fn payload(&self) -> &[u8] {
+    pub const fn payload(&self) -> &'a [u8] {
         self.payload
     }
 }
