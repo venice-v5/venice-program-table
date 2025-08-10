@@ -1,8 +1,8 @@
 # SDK Guide
 
-This guide covers the public API for producing and consuming Venice Program Table (VPT) blobs. VPT is a compact, aligned, versioned format for shipping a mapping of module names → MicroPython bytecode to the Venice runtime on VEX V5.
+This guide covers the public API for producing and consuming Venice Program Table (VPT) blobs.
 
-- no_std by default: parsing/consuming requires no allocator.
+- no_std by default: parsing/consuming requires no allocator or operating system.
 - Optional builder feature: enable "builder" to construct VPT blobs on the host (uses alloc).
 
 ## Crate Features
@@ -22,7 +22,7 @@ If you only consume VPT blobs (embedded/firmware side), omit the feature and kee
 
 - `VPT_MAGIC: u32` — magic number identifying VPT blobs.
 - `VERSION: Version` — the format version the crate is built against.
-- `Version` — opaque version struct; primarily used in error reporting.
+- `Version` — major/minor version struct.
 - `VptDefect` — errors when validating a VPT:
   - `SizeMismatch`
   - `AlignmentMismatch`
@@ -36,7 +36,7 @@ If you only consume VPT blobs (embedded/firmware side), omit the feature and kee
 
 ## Consuming a VPT (no_std)
 
-Validate a blob and iterate its entries without allocations:
+Validate a blob and iterate through its entries without allocations:
 
 ```rust
 use venice_program_table::{Vpt, VptDefect};
@@ -45,18 +45,14 @@ const VENDOR_ID: u32 = 0x1234_5678;
 
 static BLOB: &[u8] = include_bytes!("blob.vpt");
 
-fn load() -> Result<(), VptDefect> {
+fn load_program(program_name: &[u8]) -> Result<(), VptDefect> {
     let vpt = Vpt::new(BLOB, VENDOR_ID)?;
     for program in vpt.program_iter() {
-        let name_bytes = program.name();
+        let name = program.name();
         let payload = program.payload();
 
-        // Optionally interpret name as UTF-8 if your naming guarantees UTF-8.
-        if let Ok(name) = core::str::from_utf8(name_bytes) {
-            // e.g., dispatch on module name
-            if name == "main" {
-                // hand off payload to your language runtime
-            }
+        if name == program_name {
+            // hand off payload to language runtime
         }
     }
     Ok(())
@@ -71,6 +67,8 @@ fn find_program<'a>(vpt: &'a Vpt<'a>, name: &[u8]) -> Option<venice_program_tabl
     vpt.program_iter().find(|p| p.name() == name)
 }
 ```
+
+<!-- TODO: Add hash map building example -->
 
 ### Constructing from a pointer/linked file (advanced)
 
@@ -107,7 +105,7 @@ const VENDOR_ID: u32 = 0x1234_5678;
 
 fn build_blob() -> Vec<u8> {
     // Prepare entrypoint name and source
-    let entrypoint_name = b"main.py".to_vec();
+    let entrypoint_name = b"main".to_vec();
     let entrypoint_src: Vec<u8> = b"print('hello')".to_vec();
 
     let mut builder = VptBuilder::new(VENDOR_ID);
