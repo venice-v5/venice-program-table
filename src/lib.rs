@@ -96,9 +96,9 @@ impl Version {
     pub const fn compatible_with(&self, other: &Version) -> bool {
         self.major == other.major
             && if self.major == 0 {
-                self.minor <= other.minor
-            } else {
                 self.minor == other.minor
+            } else {
+                self.minor <= other.minor
             }
     }
 }
