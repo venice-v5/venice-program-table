@@ -86,6 +86,9 @@ pub struct Program<'a> {
 #[must_use]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ProgramIter<'a> {
+    // copy directly from VPT and don't modify
+    program_count: u32,
+    current_program: u32,
     bytes: &'a [u8],
 }
 
@@ -163,8 +166,14 @@ impl<'a> Vpt<'a> {
         })
     }
 
+    pub fn header(&self) -> &VptHeader {
+        bytemuck::from_bytes(&self.bytes[..size_of::<VptHeader>()])
+    }
+
     pub fn program_iter(&self) -> ProgramIter {
         ProgramIter {
+            program_count: self.header().program_count,
+            current_program: 0,
             bytes: &self.bytes[size_of::<VptHeader>()..],
         }
     }
@@ -174,6 +183,10 @@ impl<'a> Iterator for ProgramIter<'a> {
     type Item = Program<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
+        if self.current_program >= self.program_count {
+            return None;
+        }
+
         let header_bytes = self.bytes.get(..size_of::<ProgramHeader>())?;
         let header: &ProgramHeader = bytemuck::from_bytes(header_bytes);
 
@@ -187,7 +200,9 @@ impl<'a> Iterator for ProgramIter<'a> {
 
         let program_len =
             size_of::<ProgramHeader>() + header.payload_len as usize + header.name_len as usize;
+
         self.bytes = &self.bytes[(program_len + 7) & !7..];
+        self.current_program += 1;
 
         Some(Program { name, payload })
     }
