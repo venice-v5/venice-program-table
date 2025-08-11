@@ -44,8 +44,10 @@ const fn align8(n: usize) -> usize {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(C)]
 pub struct Version {
-    major: u32,
-    minor: u32,
+    /// Major version number.
+    pub major: u32,
+    /// Minor version number.
+    pub minor: u32,
 }
 
 /// An error encountered while validating a VPT.
