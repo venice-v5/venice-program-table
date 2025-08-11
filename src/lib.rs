@@ -154,7 +154,7 @@ impl<'a> Vpt<'a> {
     /// - [`VptDefect::SizeMismatch`] if `bytes` could not contain the entire VPT.
     /// - [`VptDefect::AlignmentMismatch`] if `bytes` is not 8-byte aligned.
     /// - [`VptDefect::MagicMismatch`] if `header.magic` does not match [`VPT_MAGIC`].
-    /// - [`VptDefect::VersionMismatch`] if `header.version` is not compatible with [`SDK_VERSIOn`].
+    /// - [`VptDefect::VersionMismatch`] if `header.version` is not compatible with [`SDK_VERSION`].
     /// - [`VptDefect::VendorMismatch`] if `header.vendor_id` does not match `vendor_id`.
     pub fn new(bytes: &'a [u8], vendor_id: u32) -> Result<Self, VptDefect> {
         if bytes.len() < size_of::<VptHeader>() {
@@ -196,7 +196,7 @@ impl<'a> Vpt<'a> {
     ///
     /// - [`VptDefect::AlignmentMismatch`] if `ptr` is not 8-byte aligned.
     /// - [`VptDefect::MagicMismatch`] if `header.magic` does not match [`VPT_MAGIC`].
-    /// - [`VptDefect::VersionMismatch`] if `header.version` is not compatible with [`SDK_VERSIOn`].
+    /// - [`VptDefect::VersionMismatch`] if `header.version` is not compatible with [`SDK_VERSION`].
     /// - [`VptDefect::VendorMismatch`] if `header.vendor_id` does not match `vendor_id`.
     ///
     /// # Safety
