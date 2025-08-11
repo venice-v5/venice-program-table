@@ -24,6 +24,8 @@ extern crate alloc;
 #[cfg(feature = "builder")]
 mod builder;
 
+use core::fmt::Display;
+
 use bytemuck::{AnyBitPattern, NoUninit, PodCastError, Zeroable};
 use thiserror::Error;
 
@@ -63,10 +65,12 @@ pub enum VptDefect {
     #[error("incorrect magic: expected 0x675c3ed9, found 0x{0:08x}")]
     MagicMismatch(u32),
     /// `header.version` is incompatible with [`SDK_VERSION`].
-    #[error("incompatible version")]
+    #[error(
+        "incompatible version: SDK version {SDK_VERSION} is not compatible with VPT version {0}"
+    )]
     VersionMismatch(Version),
     /// `header.vendor_id` does not match the provided vendor ID.
-    #[error("vendor ID mismatch")]
+    #[error("vendor ID mismatch: found 0x{0:08x}")]
     VendorMismatch(u32),
 }
 
@@ -148,6 +152,12 @@ impl Version {
             } else {
                 self.minor <= other.minor
             }
+    }
+}
+
+impl Display for Version {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "v{}.{}", self.major, self.minor)
     }
 }
 
