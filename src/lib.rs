@@ -150,7 +150,7 @@ impl Version {
             && if self.major == 0 {
                 self.minor == other.minor
             } else {
-                self.minor <= other.minor
+                true
             }
     }
 }
