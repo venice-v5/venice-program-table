@@ -135,7 +135,7 @@ pub struct ProgramIter<'a> {
 }
 
 impl Version {
-    /// Returns the compatibility of two versions, according to the VPT spec.
+    /// Checks the compatibility of two versions, according to the VPT spec.
     pub const fn compatible_with(&self, other: &Version) -> bool {
         self.major == other.major
             && if self.major == 0 {
