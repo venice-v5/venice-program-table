@@ -11,15 +11,11 @@ export default defineConfig({
 
     sidebar: [
       {
-        text: "File format",
+        text: "Specification",
         items: [
           { text: "Introduction", link: "/introduction" },
           { text: "Advanced", link: "/advanced" },
         ],
-      },
-      {
-        text: "SDK",
-        items: [{ text: "SDK usage", link: "/sdk" }],
       },
     ],
 
