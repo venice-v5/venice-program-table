@@ -1,8 +1,13 @@
+//! VPT program builder.
+//!
+//! This module can be used by enabling the `builder` feature, with the condition that a memory
+//! allocator is available to the program.
+
 use alloc::vec::Vec;
 
 use crate::{ProgramHeader, SDK_VERSION, VPT_MAGIC, VptHeader, align8};
 
-/// VPT Program builder.
+/// VPT program builder.
 ///
 /// This struct can be passed to [`VptBuilder::add_program`].
 #[derive(Debug, Clone, PartialEq, Eq)]

@@ -13,7 +13,7 @@
 //! Additionally, the SDK, excluding the builder, is entirely zero-copy. [`Vpt`]s and [`Program`]s
 //! reference the original blob's memory, and inherit its lifetime. So, if a blob is stored as
 //! static data or is dynamically linked to the program, its data will be available for the
-//! entirety of the program without .
+//! entirety of the program without.
 
 #![no_std]
 #![warn(missing_docs)]
@@ -99,16 +99,6 @@ pub struct Vpt<'a> {
     // Invariant: `bytes` contains a well-aligned VPT with a valid header.
     bytes: &'a [u8],
 }
-
-// Program Layout:
-//
-// #[repr(C, align(8)))]
-// struct Program {
-//     name_len: u32,
-//     payload_len: u32,
-//     payload: [u8, payload_len],
-//     name: [u8, name_len],
-// }
 
 /// Program Header
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
