@@ -1,6 +1,6 @@
 use alloc::vec::Vec;
 
-use crate::{ProgramHeader, VERSION, VPT_MAGIC, VptHeader, align8};
+use crate::{ProgramHeader, SDK_VERSION, VPT_MAGIC, VptHeader, align8};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProgramBuilder {
@@ -52,7 +52,7 @@ impl VptBuilder {
 
         bytes.extend_from_slice(bytemuck::bytes_of(&VptHeader {
             magic: VPT_MAGIC,
-            version: VERSION,
+            version: SDK_VERSION,
             vendor_id: self.vendor_id,
             size: total_size as u32,
             program_count: self.programs.len() as u32,
