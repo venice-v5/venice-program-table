@@ -6,6 +6,14 @@
 //! This crate, the VPT SDK, is the standard implementation of a VPT parser and builder. This SDK
 //! is `no_std`, meaning it can run on targets without `std` support, such as `armv7a-vex-v5`, the
 //! Rust target for V5 programs.
+//!
+//! The SDK also optionally includes a builder, gated by the `builder` feature, which requires a
+//! memory allocator.
+//!
+//! Additionally, the SDK, excluding the builder, is entirely zero-copy. [`Vpt`]s and [`Program`]s
+//! reference the original blob's memory, and inherit its lifetime. So, if a blob is stored as
+//! static data or is dynamically linked to the program, its data will be available for the
+//! entirety of the program without .
 
 #![no_std]
 #![warn(missing_docs)]
