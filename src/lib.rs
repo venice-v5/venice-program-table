@@ -29,7 +29,7 @@ use bytemuck::{AnyBitPattern, NoUninit, PodCastError, Zeroable};
 #[cfg(feature = "builder")]
 pub use crate::builder::{ProgramBuilder, VptBuilder};
 
-/// Magic number used to identify VPTs. VPTs where `header.magic != VPT_MAGIC` must be rejected.
+/// Magic number used to identify VPTs.
 pub const VPT_MAGIC: u32 = 0x675c3ed9;
 
 /// VPT version this SDK is built against.
@@ -40,8 +40,6 @@ const fn align8(n: usize) -> usize {
 }
 
 /// A version of the VPT spec.
-///
-/// For a VPT to be accepted, its version must be compatible with [`SDK_VERSION`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(C)]
 pub struct Version {
@@ -72,8 +70,7 @@ pub struct VptHeader {
     pub magic: u32,
     /// VPT version.
     pub version: Version,
-    /// ID to distinguish VPTs with different purposes. For example, it would be useful to use for
-    /// a VPT containing Python code to use a different ID than one containing Lua code.
+    /// Vendor ID.
     pub vendor_id: u32,
     /// VPT payload size.
     pub size: u32,
