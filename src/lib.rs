@@ -1,4 +1,14 @@
+//! # Venice Program Table SDK
+//!
+//! The Venice Program Table (VPT) is a data structure designed for delivering program modules to
+//! language runtimes running on VEX V5 robots.
+//!
+//! This crate, the VPT SDK, is the standard implementation of a VPT parser and builder. This SDK
+//! is `no_std`, meaning it can run on targets without `std` support, such as `armv7a-vex-v5`, the
+//! Rust target for V5 programs.
+
 #![no_std]
+#![warn(missing_docs)]
 
 #[cfg(feature = "builder")]
 extern crate alloc;
@@ -11,13 +21,19 @@ use bytemuck::{AnyBitPattern, NoUninit, PodCastError, Zeroable};
 #[cfg(feature = "builder")]
 pub use crate::builder::{ProgramBuilder, VptBuilder};
 
+/// Magic number used to identify VPTs. VPTs where `header.magic != VPT_MAGIC` must be rejected.
 pub const VPT_MAGIC: u32 = 0x675c3ed9;
-pub const VERSION: Version = Version { major: 0, minor: 1 };
+
+/// VPT version this SDK is built against.
+pub const SDK_VERSION: Version = Version { major: 0, minor: 1 };
 
 const fn align8(n: usize) -> usize {
     (n + 7) & !7
 }
 
+/// A version of the VPT spec.
+///
+/// For a VPT to be accepted, its version must be compatible with [`SDK_VERSION`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[repr(C)]
 pub struct Version {
@@ -25,15 +41,22 @@ pub struct Version {
     minor: u32,
 }
 
+/// An error encountered while validating a VPT.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum VptDefect {
+    /// The blob is longer than the provided bytes.
     SizeMismatch,
+    /// The blob is not 8-byte aligned.
     AlignmentMismatch,
+    /// `header.magic` does not match [`VPT_MAGIC`], or 0x675c3ed9.
     MagicMismatch(u32),
+    /// `header.version` is incompatible with [`SDK_VERSION`].
     VersionMismatch(Version),
+    /// `header.vendor_id` does not match the provided vendor ID.
     VendorMismatch(u32),
 }
 
+/// VPT Header
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(C, align(8))]
 pub struct VptHeader {
@@ -54,6 +77,15 @@ unsafe impl Zeroable for VptHeader {}
 unsafe impl AnyBitPattern for VptHeader {}
 unsafe impl NoUninit for VptHeader {}
 
+/// A read-only view of a validated VPT.
+///
+/// This VPT has been verified to be version-compatible with SDK, well-aligned, and contain a
+/// matching vendor ID. Its programs can be iterated through by calling [`program_iter`], returning
+/// a [`ProgramIter`] which iterates through each contained program, until it either has iterated
+/// through `header.program_count` programs, or it has exhausted the total number of bytes in the
+/// blob.
+///
+/// [`program_iter`]: `Vpt::program_iter`
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Vpt<'a> {
     // Invariant: `bytes` contains a well-aligned VPT with a valid header.
@@ -70,10 +102,13 @@ pub struct Vpt<'a> {
 //     name: [u8, name_len],
 // }
 
+/// Program Header
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(C, align(8))]
 pub struct ProgramHeader {
+    /// Length of the program's name in bytes.
     pub name_len: u32,
+    /// Length of the program's payload in bytes.
     pub payload_len: u32,
 }
 
@@ -81,12 +116,15 @@ unsafe impl Zeroable for ProgramHeader {}
 unsafe impl AnyBitPattern for ProgramHeader {}
 unsafe impl NoUninit for ProgramHeader {}
 
+/// A read-only view of program's name and payload. This view has the same lifetime as the [`Vpt`]
+/// it originated from.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Program<'a> {
     name: &'a [u8],
     payload: &'a [u8],
 }
 
+/// VPT program iterator.
 #[must_use]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ProgramIter<'a> {
@@ -97,6 +135,7 @@ pub struct ProgramIter<'a> {
 }
 
 impl Version {
+    /// Returns the compatibility of two versions, according to the VPT spec.
     pub const fn compatible_with(&self, other: &Version) -> bool {
         self.major == other.major
             && if self.major == 0 {
@@ -108,6 +147,15 @@ impl Version {
 }
 
 impl<'a> Vpt<'a> {
+    /// Constructs a [`Vpt`] from a byte slice.
+    ///
+    /// # Errors
+    ///
+    /// - [`VptDefect::SizeMismatch`] if `bytes` could not contain the entire VPT.
+    /// - [`VptDefect::AlignmentMismatch`] if `bytes` is not 8-byte aligned.
+    /// - [`VptDefect::MagicMismatch`] if `header.magic` does not match [`VPT_MAGIC`].
+    /// - [`VptDefect::VersionMismatch`] if `header.version` is not compatible with [`SDK_VERSIOn`].
+    /// - [`VptDefect::VendorMismatch`] if `header.vendor_id` does not match `vendor_id`.
     pub fn new(bytes: &'a [u8], vendor_id: u32) -> Result<Self, VptDefect> {
         if bytes.len() < size_of::<VptHeader>() {
             return Err(VptDefect::SizeMismatch);
@@ -123,7 +171,7 @@ impl<'a> Vpt<'a> {
             return Err(VptDefect::MagicMismatch(header.magic));
         }
 
-        if !VERSION.compatible_with(&header.version) {
+        if !SDK_VERSION.compatible_with(&header.version) {
             return Err(VptDefect::VersionMismatch(header.version));
         }
 
@@ -142,9 +190,18 @@ impl<'a> Vpt<'a> {
         })
     }
 
+    /// Constructs a [`Vpt`] from a pointer.
+    ///
+    /// # Errors
+    ///
+    /// - [`VptDefect::AlignmentMismatch`] if `ptr` is not 8-byte aligned.
+    /// - [`VptDefect::MagicMismatch`] if `header.magic` does not match [`VPT_MAGIC`].
+    /// - [`VptDefect::VersionMismatch`] if `header.version` is not compatible with [`SDK_VERSIOn`].
+    /// - [`VptDefect::VendorMismatch`] if `header.vendor_id` does not match `vendor_id`.
+    ///
     /// # Safety
     ///
-    /// `ptr` must point to a valid VPT
+    /// `ptr` must point to memory that is valid for reading up to `header.size` bytes.
     pub unsafe fn from_ptr(ptr: *const u8, vendor_id: u32) -> Result<Self, VptDefect> {
         let header_ptr = ptr as *const VptHeader;
         if !header_ptr.is_aligned() {
@@ -157,7 +214,7 @@ impl<'a> Vpt<'a> {
             return Err(VptDefect::MagicMismatch(header.magic));
         }
 
-        if !VERSION.compatible_with(&header.version) {
+        if !SDK_VERSION.compatible_with(&header.version) {
             return Err(VptDefect::VersionMismatch(header.version));
         }
 
@@ -170,10 +227,12 @@ impl<'a> Vpt<'a> {
         })
     }
 
+    /// Returns the [`VptHeader`] of the VPT.
     pub fn header(&self) -> &VptHeader {
         bytemuck::from_bytes(&self.bytes[..size_of::<VptHeader>()])
     }
 
+    /// Returns a [`ProgramIter`] which can be used to iterate through the programs within the VPT.
     pub fn program_iter(&self) -> ProgramIter {
         ProgramIter {
             program_count: self.header().program_count,
@@ -213,10 +272,12 @@ impl<'a> Iterator for ProgramIter<'a> {
 }
 
 impl<'a> Program<'a> {
+    /// Returns the name of the program.
     pub const fn name(&self) -> &'a [u8] {
         self.name
     }
 
+    /// Returns the payload of the program.
     pub const fn payload(&self) -> &'a [u8] {
         self.payload
     }
