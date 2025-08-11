@@ -2,12 +2,18 @@ use alloc::vec::Vec;
 
 use crate::{ProgramHeader, SDK_VERSION, VPT_MAGIC, VptHeader, align8};
 
+/// VPT Program builder.
+///
+/// This struct can be passed to [`VptBuilder::add_program`].
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProgramBuilder {
+    /// Name of the program.
     pub name: Vec<u8>,
+    /// Payload of the program.
     pub payload: Vec<u8>,
 }
 
+/// VPT builder.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct VptBuilder {
     vendor_id: u32,
@@ -15,20 +21,24 @@ pub struct VptBuilder {
 }
 
 impl ProgramBuilder {
+    /// Returns the size of the program without padding.
     pub const fn base_size(&self) -> usize {
         size_of::<ProgramHeader>() + self.name.len() + self.payload.len()
     }
 
+    /// Returns the size of the program with padding.
     pub const fn size(&self) -> usize {
         align8(self.base_size())
     }
 
+    /// Returns the amount of padding bytes to be appended to the program.
     pub const fn padding_bytes(&self) -> usize {
         self.size() - self.base_size()
     }
 }
 
 impl VptBuilder {
+    /// Constructs a new builder with the provided vendor ID.
     pub const fn new(vendor_id: u32) -> Self {
         Self {
             vendor_id,
@@ -36,10 +46,13 @@ impl VptBuilder {
         }
     }
 
+    /// Adds a program to the VPT to be built.
     pub fn add_program(&mut self, program: ProgramBuilder) {
         self.programs.push(program);
     }
 
+    /// Builds the VPT with the provided vendor ID, the SDK's version, and the programs added to the
+    /// builder, as a [`Vec<u8>`].
     pub fn build(self) -> Vec<u8> {
         let total_size = size_of::<VptHeader>()
             + self
