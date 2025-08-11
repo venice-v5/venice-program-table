@@ -248,7 +248,7 @@ impl<'a> Vpt<'a> {
     }
 
     /// Returns a [`ProgramIter`] which can be used to iterate through the programs within the VPT.
-    pub fn program_iter(&self) -> ProgramIter {
+    pub fn program_iter(&self) -> ProgramIter<'a> {
         ProgramIter {
             program_count: self.header().program_count,
             current_program: 0,
