@@ -116,7 +116,7 @@ unsafe impl Zeroable for ProgramHeader {}
 unsafe impl AnyBitPattern for ProgramHeader {}
 unsafe impl NoUninit for ProgramHeader {}
 
-/// A read-only view of program's name and payload. This view has the same lifetime as the [`Vpt`]
+/// A read-only view of a program's name and payload. This view has the same lifetime as the [`Vpt`]
 /// it originated from.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Program<'a> {
@@ -124,7 +124,9 @@ pub struct Program<'a> {
     payload: &'a [u8],
 }
 
-/// VPT program iterator.
+/// VPT program iterator obtained from [`Vpt::program_iter`]. This iterator will continue to
+/// iterate through its VPT until either `header.program_count` has been exceeded or the blob's
+/// bytes have been exhausted.
 #[must_use]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ProgramIter<'a> {
