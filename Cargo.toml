@@ -11,6 +11,7 @@ authors = ["Faisal Malallah <faisal@fibn.cc>"]
 
 [dependencies]
 bytemuck = "1.23.2"
+thiserror = { version = "2.0.12", default-features = false }
 
 [features]
 builder = []

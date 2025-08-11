@@ -25,6 +25,7 @@ extern crate alloc;
 mod builder;
 
 use bytemuck::{AnyBitPattern, NoUninit, PodCastError, Zeroable};
+use thiserror::Error;
 
 #[cfg(feature = "builder")]
 pub use crate::builder::{ProgramBuilder, VptBuilder};
@@ -48,17 +49,22 @@ pub struct Version {
 }
 
 /// An error encountered while validating a VPT.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Error)]
 pub enum VptDefect {
     /// The blob is longer than the provided bytes.
+    #[error("VPT blob longer than provided bytes")]
     SizeMismatch,
     /// The blob is not 8-byte aligned.
+    #[error("VPT blob not 8-byte aligned")]
     AlignmentMismatch,
     /// `header.magic` does not match [`VPT_MAGIC`], or 0x675c3ed9.
+    #[error("incorrect magic: expected 0x675c3ed9, found 0x{0:08x}")]
     MagicMismatch(u32),
     /// `header.version` is incompatible with [`SDK_VERSION`].
+    #[error("incompatible version")]
     VersionMismatch(Version),
     /// `header.vendor_id` does not match the provided vendor ID.
+    #[error("vendor ID mismatch")]
     VendorMismatch(u32),
 }
 
