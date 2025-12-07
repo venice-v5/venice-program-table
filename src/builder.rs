@@ -16,6 +16,8 @@ pub struct ProgramBuilder {
     pub name: Vec<u8>,
     /// Payload of the program.
     pub payload: Vec<u8>,
+    /// Flags for the program.
+    pub flags: u8,
 }
 
 /// VPT builder.
@@ -80,6 +82,7 @@ impl VptBuilder {
             bytes.extend_from_slice(bytemuck::bytes_of(&ProgramHeader {
                 name_len: program.name.len() as u32,
                 payload_len: program.payload.len() as u32,
+                flags: program.flags,
             }));
 
             bytes.extend_from_slice(&program.payload);

@@ -38,6 +38,9 @@ pub const VPT_MAGIC: u32 = 0x675c3ed9;
 /// VPT version this SDK is built against.
 pub const SDK_VERSION: Version = Version { major: 0, minor: 1 };
 
+/// Flag indicating if the program is a package.
+pub const IS_PACKAGE: u8 = 1;
+
 const fn align8(n: usize) -> usize {
     (n + 7) & !7
 }
@@ -117,6 +120,8 @@ pub struct ProgramHeader {
     pub name_len: u32,
     /// Length of the program's payload in bytes.
     pub payload_len: u32,
+    /// Flags for the program.
+    pub flags: u8,
 }
 
 unsafe impl Zeroable for ProgramHeader {}
@@ -129,6 +134,7 @@ unsafe impl NoUninit for ProgramHeader {}
 pub struct Program<'a> {
     name: &'a [u8],
     payload: &'a [u8],
+    flags: u8,
 }
 
 /// VPT program iterator obtained from [`Vpt::program_iter`]. This iterator will continue to
@@ -282,7 +288,7 @@ impl<'a> Iterator for ProgramIter<'a> {
         self.bytes = &self.bytes[align8(program_len)..];
         self.current_program += 1;
 
-        Some(Program { name, payload })
+        Some(Program { name, payload, flags: header.flags })
     }
 }
 
@@ -295,5 +301,10 @@ impl<'a> Program<'a> {
     /// Returns the payload of the program.
     pub const fn payload(&self) -> &'a [u8] {
         self.payload
+    }
+
+    /// Returns whether the program is a package.
+    pub const fn is_package(&self) -> bool {
+        (self.flags & IS_PACKAGE) != 0
     }
 }
