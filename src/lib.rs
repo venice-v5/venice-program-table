@@ -138,9 +138,12 @@ unsafe impl NoUninit for ProgramHeader {}
 /// it originated from.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Program<'a> {
-    name: &'a [u8],
-    payload: &'a [u8],
-    flags: u8,
+    /// The name of the program, as a byte slice.
+    pub name: &'a [u8],
+    /// The payload of the program, as a byte slice.
+    pub payload: &'a [u8],
+    /// Flags associated with the program.
+    pub flags: u8,
 }
 
 /// VPT program iterator obtained from [`Vpt::program_iter`]. This iterator will continue to
