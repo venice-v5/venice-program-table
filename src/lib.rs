@@ -38,8 +38,14 @@ pub const VPT_MAGIC: u32 = 0x675c3ed9;
 /// VPT version this SDK is built against.
 pub const SDK_VERSION: Version = Version { major: 0, minor: 1 };
 
-/// Flag indicating if the program is a package.
-pub const IS_PACKAGE: u8 = 1;
+bitflags::bitflags! {
+    /// Program flags.
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub struct ProgramFlags: u8 {
+        /// Flag indicating if the program is a package.
+        const IS_PACKAGE = 1 << 0;
+    }
+}
 
 const fn align8(n: usize) -> usize {
     (n + 7) & !7
@@ -305,6 +311,6 @@ impl<'a> Program<'a> {
 
     /// Returns whether the program is a package.
     pub const fn is_package(&self) -> bool {
-        (self.flags & IS_PACKAGE) != 0
+        ProgramFlags::from_bits_truncate(self.flags).contains(ProgramFlags::IS_PACKAGE)
     }
 }
