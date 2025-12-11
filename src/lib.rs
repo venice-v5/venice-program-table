@@ -307,16 +307,6 @@ impl<'a> Iterator for ProgramIter<'a> {
 }
 
 impl<'a> Program<'a> {
-    /// Returns the name of the program.
-    pub const fn name(&self) -> &'a [u8] {
-        self.name
-    }
-
-    /// Returns the payload of the program.
-    pub const fn payload(&self) -> &'a [u8] {
-        self.payload
-    }
-
     /// Returns the program flags.
     ///
     /// # Errors
@@ -327,11 +317,6 @@ impl<'a> Program<'a> {
             Some(flags) => Ok(flags),
             None => Err(FlagsError),
         }
-    }
-
-    /// Returns the raw flags byte without processing.
-    pub const fn flags_raw(&self) -> u8 {
-        self.flags
     }
 
     /// Returns whether the program is a package.
