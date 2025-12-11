@@ -38,6 +38,15 @@ pub const VPT_MAGIC: u32 = 0x675c3ed9;
 /// VPT version this SDK is built against.
 pub const SDK_VERSION: Version = Version { major: 0, minor: 1 };
 
+bitflags::bitflags! {
+    /// Program flags.
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub struct ProgramFlags: u8 {
+        /// Flag indicating if the program is a package.
+        const IS_PACKAGE = 1 << 0;
+    }
+}
+
 const fn align8(n: usize) -> usize {
     (n + 7) & !7
 }
@@ -73,6 +82,11 @@ pub enum VptDefect {
     #[error("vendor ID mismatch: found 0x{0:08x}")]
     VendorMismatch(u32),
 }
+
+/// An error indicating that the program's flags contain an invalid bit pattern.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Error)]
+#[error("invalid program flags bit pattern")]
+pub struct FlagsError;
 
 /// VPT Header
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -117,6 +131,8 @@ pub struct ProgramHeader {
     pub name_len: u32,
     /// Length of the program's payload in bytes.
     pub payload_len: u32,
+    /// Flags for the program.
+    pub flags: u8,
 }
 
 unsafe impl Zeroable for ProgramHeader {}
@@ -127,8 +143,12 @@ unsafe impl NoUninit for ProgramHeader {}
 /// it originated from.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Program<'a> {
-    name: &'a [u8],
-    payload: &'a [u8],
+    /// The name of the program, as a byte slice.
+    pub name: &'a [u8],
+    /// The payload of the program, as a byte slice.
+    pub payload: &'a [u8],
+    /// Flags associated with the program.
+    pub flags: u8,
 }
 
 /// VPT program iterator obtained from [`Vpt::program_iter`]. This iterator will continue to
@@ -282,18 +302,25 @@ impl<'a> Iterator for ProgramIter<'a> {
         self.bytes = &self.bytes[align8(program_len)..];
         self.current_program += 1;
 
-        Some(Program { name, payload })
+        Some(Program { name, payload, flags: header.flags })
     }
 }
 
 impl<'a> Program<'a> {
-    /// Returns the name of the program.
-    pub const fn name(&self) -> &'a [u8] {
-        self.name
+    /// Returns the program flags.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`FlagsError`] if the flags contain an invalid bit pattern.
+    pub const fn flags(&self) -> Result<ProgramFlags, FlagsError> {
+        match ProgramFlags::from_bits(self.flags) {
+            Some(flags) => Ok(flags),
+            None => Err(FlagsError),
+        }
     }
 
-    /// Returns the payload of the program.
-    pub const fn payload(&self) -> &'a [u8] {
-        self.payload
+    /// Returns whether the program is a package.
+    pub const fn is_package(&self) -> bool {
+        ProgramFlags::from_bits_truncate(self.flags).contains(ProgramFlags::IS_PACKAGE)
     }
 }

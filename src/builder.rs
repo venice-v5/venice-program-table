@@ -5,7 +5,7 @@
 
 use alloc::vec::Vec;
 
-use crate::{ProgramHeader, SDK_VERSION, VPT_MAGIC, VptHeader, align8};
+use crate::{ProgramFlags, ProgramHeader, SDK_VERSION, VPT_MAGIC, VptHeader, align8};
 
 /// VPT program builder.
 ///
@@ -16,6 +16,8 @@ pub struct ProgramBuilder {
     pub name: Vec<u8>,
     /// Payload of the program.
     pub payload: Vec<u8>,
+    /// Flags for the program.
+    pub flags: ProgramFlags,
 }
 
 /// VPT builder.
@@ -80,6 +82,7 @@ impl VptBuilder {
             bytes.extend_from_slice(bytemuck::bytes_of(&ProgramHeader {
                 name_len: program.name.len() as u32,
                 payload_len: program.payload.len() as u32,
+                flags: program.flags.bits(),
             }));
 
             bytes.extend_from_slice(&program.payload);
