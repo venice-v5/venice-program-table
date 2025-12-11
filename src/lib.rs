@@ -83,6 +83,11 @@ pub enum VptDefect {
     VendorMismatch(u32),
 }
 
+/// An error indicating that the program's flags contain an invalid bit pattern.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Error)]
+#[error("invalid program flags bit pattern")]
+pub struct FlagsError;
+
 /// VPT Header
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(C, align(8))]
@@ -139,11 +144,11 @@ unsafe impl NoUninit for ProgramHeader {}
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Program<'a> {
     /// The name of the program, as a byte slice.
-    pub name: &'a [u8],
+    name: &'a [u8],
     /// The payload of the program, as a byte slice.
-    pub payload: &'a [u8],
+    payload: &'a [u8],
     /// Flags associated with the program.
-    pub flags: u8,
+    flags: u8,
 }
 
 /// VPT program iterator obtained from [`Vpt::program_iter`]. This iterator will continue to
@@ -310,6 +315,23 @@ impl<'a> Program<'a> {
     /// Returns the payload of the program.
     pub const fn payload(&self) -> &'a [u8] {
         self.payload
+    }
+
+    /// Returns the program flags.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`FlagsError`] if the flags contain an invalid bit pattern.
+    pub const fn flags(&self) -> Result<ProgramFlags, FlagsError> {
+        match ProgramFlags::from_bits(self.flags) {
+            Some(flags) => Ok(flags),
+            None => Err(FlagsError),
+        }
+    }
+
+    /// Returns the raw flags byte without processing.
+    pub const fn flags_raw(&self) -> u8 {
+        self.flags
     }
 
     /// Returns whether the program is a package.
