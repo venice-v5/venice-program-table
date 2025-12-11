@@ -144,11 +144,11 @@ unsafe impl NoUninit for ProgramHeader {}
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Program<'a> {
     /// The name of the program, as a byte slice.
-    name: &'a [u8],
+    pub name: &'a [u8],
     /// The payload of the program, as a byte slice.
-    payload: &'a [u8],
+    pub payload: &'a [u8],
     /// Flags associated with the program.
-    flags: u8,
+    pub flags: u8,
 }
 
 /// VPT program iterator obtained from [`Vpt::program_iter`]. This iterator will continue to
